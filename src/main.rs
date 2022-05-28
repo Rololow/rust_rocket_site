@@ -1,6 +1,6 @@
 use web_rust::ThreadPool;
 use std::fs;
-use std::io::prelude::*;
+use std::io::prelude::{Read, Write};
 use std::net::TcpListener;
 use std::net::TcpStream;
 use std::thread;
@@ -22,6 +22,7 @@ fn main() {
 }
 
 fn handle_connection(mut stream: TcpStream) {
+
     let mut buffer = [0; 1024];
     stream.read(&mut buffer).unwrap();
 
@@ -40,7 +41,7 @@ fn handle_connection(mut stream: TcpStream) {
     let ip = stream.peer_addr().unwrap();
 
     let mut contents = fs::read_to_string(filename).unwrap();
-    contents = contents.replace("{}",ip.to_string().as_str());
+    contents = contents.replace("{ip}",ip.to_string().as_str());
 
     let response = format!(
         "{}\r\nContent-Length: {}\r\n\r\n{}",
