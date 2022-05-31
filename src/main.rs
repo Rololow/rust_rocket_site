@@ -13,8 +13,7 @@ async fn name(name: &str) -> String {
 #[rocket::main]
 async fn main() -> Result<(), rocket::Error> {
     let _rocket = rocket::build()
-        .mount("/", routes![index])
-        .mount("/", routes![name])
+        .mount("/", routes![index, name])
         .launch()
         .await?;
 
