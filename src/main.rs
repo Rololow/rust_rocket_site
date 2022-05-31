@@ -19,11 +19,12 @@ struct Message {
     pub username: String,
     pub message: String,
 }
-
+/*
 #[get("/")]
 fn index() -> &'static str {
     "Hello, world!"
 }
+*/
 
 #[get("/events")]
 async fn events(queue: &State<Sender<Message>>, mut end: Shutdown) -> EventStream![] {
