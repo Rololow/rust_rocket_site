@@ -1,56 +1,22 @@
-use web_rust::ThreadPool;
-use std::fs;
-use std::io::prelude::{Read, Write};
-use std::net::TcpListener;
-use std::net::TcpStream;
-use std::thread;
-use std::time::Duration;
+#[macro_use] extern crate rocket;
 
-fn main() {
-    let listener = TcpListener::bind("0.0.0.0:7878").unwrap();
-    let pool = ThreadPool::new(4);
-
-    for stream in listener.incoming() {
-        let stream = stream.unwrap();
-
-        pool.execute(|| {
-            handle_connection(stream);
-        });
-    }
-
-    println!("Shutting down.");
+#[get("/")]
+fn index() -> &'static str {
+    "Hello, world!"
 }
 
-fn handle_connection(mut stream: TcpStream) {
+#[get("/name/<name>")]
+async fn name(name: &str) -> String {
+    format!("your name is {}", name)
+}
 
-    let mut buffer = [0; 1024];
-    stream.read(&mut buffer).unwrap();
+#[rocket::main]
+async fn main() -> Result<(), rocket::Error> {
+    let _rocket = rocket::build()
+        .mount("/", routes![index])
+        .mount("/", routes![name])
+        .launch()
+        .await?;
 
-    let get = b"GET / HTTP/1.1\r\n";
-    let sleep = b"GET /sleep HTTP/1.1\r\n";
-
-    let (status_line, filename) = if buffer.starts_with(get) {
-        ("HTTP/1.1 200 OK", "src/html/index.html")
-    } else if buffer.starts_with(sleep) {
-        thread::sleep(Duration::from_secs(5));
-        ("HTTP/1.1 200 OK", "src/html/index.html")
-    } else {
-        ("HTTP/1.1 404 NOT FOUND", "src/html/404.html")
-    };
-
-    let ip = stream.peer_addr().unwrap();
-
-    let mut contents = fs::read_to_string(filename).unwrap();
-    contents = contents.replace("{ip}",ip.to_string().as_str());
-
-    let response = format!(
-        "{}\r\nContent-Length: {}\r\n\r\n{}",
-        status_line,
-        contents.len(),
-        contents
-    );
-
-    stream.write(response.as_bytes()).unwrap();
-    stream.flush().unwrap();
-
+    Ok(())
 }
