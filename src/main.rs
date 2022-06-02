@@ -19,12 +19,6 @@ struct Message {
     pub username: String,
     pub message: String,
 }
-/*
-#[get("/")]
-fn index() -> &'static str {
-    "Hello, world!"
-}
-*/
 
 #[get("/events")]
 async fn events(queue: &State<Sender<Message>>, mut end: Shutdown) -> EventStream![] {
@@ -52,13 +46,15 @@ fn post(form: Form<Message>, queue: &State<Sender<Message>>) {
 
 #[get("/say/<say>")]
 async fn say(say: &str) -> String {
-    format!("{}", say)
+    say.to_string()
 }
 
 #[catch(404)]
 fn not_found(req: &Request) -> String {
     format!("Sorry, '{}' is not a valid path.", req.uri())
 }
+
+
 
 #[rocket::main]
 async fn main() -> Result<(), rocket::Error> {
