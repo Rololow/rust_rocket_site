@@ -9,6 +9,9 @@ use rocket::response::stream::{EventStream, Event};
 use rocket::tokio::sync::broadcast::{channel, Sender, error::RecvError};
 use rocket::tokio::select;
 
+use rocket_auth::{Users, Error, Auth, Signup, Login};
+
+
 #[derive(Debug, Clone, FromForm, Serialize, Deserialize)]
 #[cfg_attr(test, derive(PartialEq, UriDisplayQuery))]
 #[serde(crate = "rocket::serde")]
@@ -54,14 +57,31 @@ fn not_found(req: &Request) -> String {
     format!("Sorry, '{}' is not a valid path.", req.uri())
 }
 
+#[post("/signup", data="<form>")]
+async fn signup(form: Form<Signup>, auth: Auth<'_>) -> Result<&'static str, Error> {
+    auth.signup(&form).await?;
+    auth.login(&form.into());
+    Ok("You signed up.")
+}
 
+#[post("/login", data="<form>")]
+async fn login(form: rocket::serde::json::Json<Login>, auth: Auth<'_>) -> Result<&'static str, Error> {
+    auth.login(&form).await?;
+    Ok("You're logged in.")
+}
+
+#[get("/logout")]
+fn logout(auth: Auth<'_>) {
+    auth.logout();
+}
 
 #[rocket::main]
 async fn main() -> Result<(), rocket::Error> {
     let _rocket = rocket::build()
         .manage(channel::<Message>(1024).0)
-        .mount("/", routes![say, post, events])
+        .mount("/", routes![say, post, events, signup , login, logout])
         .mount("/", FileServer::from(relative!("static")))
+        .manage(users)
         .register("/", catchers![not_found])
         .launch()
         .await?;
